@@ -1,11 +1,14 @@
 from fastapi import Query, Response
 from fastapi import APIRouter, HTTPException, Header, Request, Depends
 from typing import List
-from pydantic import BaseModel
 import base64
 import os
 import io
 import zipfile
+from rapid_md.schema import (
+    FileResponse, FilesListResponse, FileDeleteResponse,
+    FileUploadRequest, SingleFileUploadResponse, ZipFileUploadResponse
+)
 from sqlalchemy.orm import Session
 from datetime import datetime
 from rapid_md.models import UploadedFile, FileTypeEnum
@@ -16,31 +19,33 @@ import markdown as mdlib
 
 router = APIRouter()
 
-@router.get("/files", response_model=List[dict])
+@router.get("/files", response_model=FilesListResponse)
 def list_files(
     db: Session = Depends(get_db),
     x_api_key: str = Header(None)
-):
+) -> FilesListResponse:
     api_key = get_api_key_from_env()
     if x_api_key != api_key:
         raise HTTPException(status_code=401, detail="Invalid or missing API key")
     files = db.query(UploadedFile).all()
-    return [
-        {
-            "id": str(f.id),
-            "filename": f.filename,
-            "created_at": f.created_at.isoformat(),
-            "filetype": f.filetype.value
-        }
-        for f in files
-    ]
+    return FilesListResponse(
+        files=[
+            FileResponse(
+                id=f.id,
+                filename=f.filename,
+                created_at=f.created_at,
+                filetype=f.filetype.value
+            ) 
+            for f in files
+        ]
+    )
 
 @router.delete("/files/{file_id}")
 def delete_file(
     file_id: str,
     db: Session = Depends(get_db),
     x_api_key: str = Header(None)
-):
+) -> FileDeleteResponse:
     api_key = get_api_key_from_env()
     if x_api_key != api_key:
         raise HTTPException(status_code=401, detail="Invalid or missing API key")
@@ -49,15 +54,11 @@ def delete_file(
         raise HTTPException(status_code=404, detail="File not found")
     db.delete(file)
     db.commit()
-    return {"message": "File deleted", "id": file_id}
+    return FileDeleteResponse(message="File deleted", id=file_id)
 
 API_KEY_ENV = "RAPID_MD_API_KEY"
 
-class FileUploadRequest(BaseModel):
-    filepath: str  # relative path of the file to save
-    content_base64: str  # file content encoded in base64
-
-def get_api_key_from_env():
+def get_api_key_from_env() -> str:
     api_key = os.getenv(API_KEY_ENV)
     if not api_key:
         raise RuntimeError(f"Environment variable {API_KEY_ENV} not set")
@@ -74,7 +75,7 @@ def guess_filetype(filename: str) -> FileTypeEnum:
         return FileTypeEnum.document
 
 
-def save_uploaded_file(db: Session, filename: str, content_b64: str, filetype: FileTypeEnum):
+def save_uploaded_file(db: Session, filename: str, content_b64: str, filetype: FileTypeEnum) -> UploadedFile:
     uploaded = UploadedFile(
         filename=filename,
         content=content_b64,
@@ -93,7 +94,7 @@ async def upload_file(
     body: FileUploadRequest,
     x_api_key: str = Header(None),
     db: Session = Depends(get_db)
-):
+) -> dict:
     api_key = get_api_key_from_env()
     if x_api_key != api_key:
         raise HTTPException(status_code=401, detail="Invalid or missing API key")
@@ -134,7 +135,7 @@ async def upload_file(
 
 # List and delete endpoints at the end for clarity
 @router.get("/files", response_model=List[dict])
-def list_files(db: Session = Depends(get_db)):
+def list_files(db: Session = Depends(get_db)) -> List[dict]:
     files = db.query(UploadedFile).all()
     return [
         {
@@ -147,7 +148,7 @@ def list_files(db: Session = Depends(get_db)):
     ]
 
 @router.delete("/files/{file_id}")
-def delete_file(file_id: str, db: Session = Depends(get_db)):
+def delete_file(file_id: str, db: Session = Depends(get_db)) -> dict:
     file = db.query(UploadedFile).filter(UploadedFile.id == file_id).first()
     if not file:
         raise HTTPException(status_code=404, detail="File not found")

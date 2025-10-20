@@ -17,7 +17,7 @@ render_router = APIRouter()
 def render_file(
     filename: str,
     db: Session = Depends(get_db)
-):
+) -> Response:
     file = db.query(UploadedFile).filter(UploadedFile.filename == filename).first()
     if not file:
         raise HTTPException(status_code=404, detail="File not found")
