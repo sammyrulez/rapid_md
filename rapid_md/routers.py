@@ -94,7 +94,7 @@ async def upload_file(
     body: FileUploadRequest,
     x_api_key: str = Header(None),
     db: Session = Depends(get_db)
-) -> dict:
+) -> SingleFileUploadResponse | ZipFileUploadResponse:
     api_key = get_api_key_from_env()
     if x_api_key != api_key:
         raise HTTPException(status_code=401, detail="Invalid or missing API key")
@@ -115,43 +115,25 @@ async def upload_file(
                         inner_content = f.read()
                         inner_content_b64 = base64.b64encode(inner_content).decode('utf-8')
                         uploaded = save_uploaded_file(db, inner_filename, inner_content_b64, inner_filetype)
-                        results.append({
-                            "id": str(uploaded.id),
-                            "filename": inner_filename,
-                            "filetype": inner_filetype.value
-                        })
-            return {"message": "Zip file extracted and files saved to database", "files": results}
+                        results.append(
+                            FileResponse(
+                                id=uploaded.id,
+                                filename=inner_filename,
+                                created_at=uploaded.created_at,
+                                filetype=inner_filetype.value
+                            )
+                        )
+            return ZipFileUploadResponse(message="Zip file extracted and files saved to database", files=results)
         else:
             uploaded = save_uploaded_file(db, filename, body.content_base64, filetype)
-            return {
-                "message": "File saved to database",
-                "id": str(uploaded.id),
-                "filename": filename,
-                "filetype": filetype.value
-            }
+            return SingleFileUploadResponse(
+                message="File saved to database",
+                id=str(uploaded.id),
+                filename=filename,
+                filetype=filetype.value
+            )
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
-# List and delete endpoints at the end for clarity
-@router.get("/files", response_model=List[dict])
-def list_files(db: Session = Depends(get_db)) -> List[dict]:
-    files = db.query(UploadedFile).all()
-    return [
-        {
-            "id": str(f.id),
-            "filename": f.filename,
-            "created_at": f.created_at.isoformat(),
-            "filetype": f.filetype.value
-        }
-        for f in files
-    ]
-
-@router.delete("/files/{file_id}")
-def delete_file(file_id: str, db: Session = Depends(get_db)) -> dict:
-    file = db.query(UploadedFile).filter(UploadedFile.id == file_id).first()
-    if not file:
-        raise HTTPException(status_code=404, detail="File not found")
-    db.delete(file)
-    db.commit()
-    return {"message": "File deleted", "id": file_id}
+# End of file
