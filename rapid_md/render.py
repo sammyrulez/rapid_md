@@ -41,6 +41,7 @@ def render_file(filename: str, db: Session = Depends(get_db)) -> Response:
         "txt": "text/plain",
         "md": "text/markdown",
         "html": "text/html",
+        "stl": "text/stl",
     }
     mimetype = mimetypes.get(ext, "application/octet-stream")
     return Response(content=file_bytes, media_type=mimetype)
