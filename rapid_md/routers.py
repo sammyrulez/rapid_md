@@ -1,4 +1,4 @@
-from fastapi import Query
+from fastapi import Query, Response
 from fastapi import APIRouter, HTTPException, Header, Request, Depends
 from typing import List
 from pydantic import BaseModel
@@ -10,12 +10,20 @@ from sqlalchemy.orm import Session
 from datetime import datetime
 from rapid_md.models import UploadedFile, FileTypeEnum
 from rapid_md.db import get_db
+import markdown as mdlib
+
 
 
 router = APIRouter()
 
 @router.get("/files", response_model=List[dict])
-def list_files(db: Session = Depends(get_db)):
+def list_files(
+    db: Session = Depends(get_db),
+    x_api_key: str = Header(None)
+):
+    api_key = get_api_key_from_env()
+    if x_api_key != api_key:
+        raise HTTPException(status_code=401, detail="Invalid or missing API key")
     files = db.query(UploadedFile).all()
     return [
         {
@@ -28,7 +36,14 @@ def list_files(db: Session = Depends(get_db)):
     ]
 
 @router.delete("/files/{file_id}")
-def delete_file(file_id: str, db: Session = Depends(get_db)):
+def delete_file(
+    file_id: str,
+    db: Session = Depends(get_db),
+    x_api_key: str = Header(None)
+):
+    api_key = get_api_key_from_env()
+    if x_api_key != api_key:
+        raise HTTPException(status_code=401, detail="Invalid or missing API key")
     file = db.query(UploadedFile).filter(UploadedFile.id == file_id).first()
     if not file:
         raise HTTPException(status_code=404, detail="File not found")
@@ -58,17 +73,6 @@ def guess_filetype(filename: str) -> FileTypeEnum:
     else:
         return FileTypeEnum.document
 
-def save_uploaded_file(db: Session, filename: str, content_b64: str, filetype: FileTypeEnum):
-    uploaded = UploadedFile(
-        filename=filename,
-        content=content_b64,
-        created_at=datetime.utcnow(),
-        filetype=filetype
-    )
-    db.add(uploaded)
-    db.commit()
-    db.refresh(uploaded)
-    return uploaded
 
 def save_uploaded_file(db: Session, filename: str, content_b64: str, filetype: FileTypeEnum):
     uploaded = UploadedFile(
