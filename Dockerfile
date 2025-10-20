@@ -10,8 +10,7 @@ RUN apt-get update && apt-get install -y build-essential libpq-dev && rm -rf /va
 COPY . .
 
 # Install Python dependencies
-RUN pip install --upgrade pip \
-    && pip install --no-cache-dir .
+RUN pip install -r requirements.txt
 
 # Expose port
 EXPOSE 8000
