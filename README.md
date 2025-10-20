@@ -53,5 +53,23 @@ Uses SQLAlchemy ORM and Alembic for migrations. The `uploaded_files` table conta
 - `RAPID_MD_API_KEY`: API key required for upload
 - `DATABASE_URL`: SQLAlchemy database URL (default: SQLite)
 
+### Docker
+
+You can run the application in a container using the provided `Dockerfile`.
+
+**Build the image:**
+```sh
+docker build -t rapid-md .
+```
+
+**Run the container:**
+```sh
+docker run -e RAPID_MD_API_KEY=yourkey -e DATABASE_URL=sqlite:///./test.db -p 8000:8000 rapid-md
+```
+
+On startup, Alembic migrations are applied automatically before the API server starts.
+
+You can override the environment variables as needed for production (e.g. PostgreSQL connection string for `DATABASE_URL`).
+
 ---
 See source code for further details and customization.
