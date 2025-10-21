@@ -12,6 +12,8 @@ Rapid MD is a FastAPI-based backend for uploading, storing, and managing files (
 - API key protection for management endpoints
 - Public endpoint for rendering and displaying files
 - Beautiful HTML template for rendering markdown files
+- Home page with files organized by upload session and tags
+- Tracking of upload sessions for grouped files (especially from ZIP archives)
 
 ### API Endpoints
 
@@ -42,6 +44,16 @@ Returns a list of all uploaded files with metadata.
 
 Deletes the file with the given UUID.
 
+#### Home Page (Public endpoint)
+`GET /`
+
+Displays a web interface showing all uploaded files organized by:
+- **Upload Session**: Groups files that were uploaded together (especially useful for ZIP uploads)
+- **Tags**: Groups files by their tag values
+- **All Files**: A comprehensive list of all files
+
+This is a **public endpoint** that doesn't require an API key.
+
 #### Render file (Public endpoint)
 `GET /render/{filename}`
 
@@ -60,6 +72,7 @@ Uses SQLAlchemy ORM and Alembic for migrations. The `uploaded_files` table conta
 - `created_at` (datetime)
 - `filetype` (enum: markdown, image, document)
 - `tags` (JSON, optional): metadati personalizzati per il file
+- `upload_session` (UUID): identificativo della sessione di upload, condiviso tra file caricati insieme
 
 ### Environment variables
 
