@@ -1,28 +1,28 @@
-from fastapi import Query, Response
 from fastapi import APIRouter, HTTPException, Header, Request, Depends
-from typing import List
 import base64
 import os
 import io
 import zipfile
 from rapid_md.schema import (
-    FileResponse, FilesListResponse, FileDeleteResponse,
-    FileUploadRequest, SingleFileUploadResponse, ZipFileUploadResponse
+    FileResponse,
+    FilesListResponse,
+    FileDeleteResponse,
+    FileUploadRequest,
+    SingleFileUploadResponse,
+    ZipFileUploadResponse,
 )
 from sqlalchemy.orm import Session
 from datetime import datetime
 from rapid_md.models import UploadedFile, FileTypeEnum
 from rapid_md.db import get_db
-import markdown as mdlib
-
 
 
 router = APIRouter()
 
+
 @router.get("/files", response_model=FilesListResponse)
 def list_files(
-    db: Session = Depends(get_db),
-    x_api_key: str = Header(None)
+    db: Session = Depends(get_db), x_api_key: str = Header(None)
 ) -> FilesListResponse:
     api_key = get_api_key_from_env()
     if x_api_key != api_key:
@@ -34,17 +34,17 @@ def list_files(
                 id=f.id,
                 filename=f.filename,
                 created_at=f.created_at,
-                filetype=f.filetype.value
-            ) 
+                filetype=f.filetype.value,
+                tags=f.tags,
+            )
             for f in files
         ]
     )
 
+
 @router.delete("/files/{file_id}")
 def delete_file(
-    file_id: str,
-    db: Session = Depends(get_db),
-    x_api_key: str = Header(None)
+    file_id: str, db: Session = Depends(get_db), x_api_key: str = Header(None)
 ) -> FileDeleteResponse:
     api_key = get_api_key_from_env()
     if x_api_key != api_key:
@@ -56,7 +56,9 @@ def delete_file(
     db.commit()
     return FileDeleteResponse(message="File deleted", id=file_id)
 
+
 API_KEY_ENV = "RAPID_MD_API_KEY"
+
 
 def get_api_key_from_env() -> str:
     api_key = os.getenv(API_KEY_ENV)
@@ -75,12 +77,19 @@ def guess_filetype(filename: str) -> FileTypeEnum:
         return FileTypeEnum.document
 
 
-def save_uploaded_file(db: Session, filename: str, content_b64: str, filetype: FileTypeEnum) -> UploadedFile:
+def save_uploaded_file(
+    db: Session,
+    filename: str,
+    content_b64: str,
+    filetype: FileTypeEnum,
+    tags: dict = None,
+) -> UploadedFile:
     uploaded = UploadedFile(
         filename=filename,
         content=content_b64,
         created_at=datetime.utcnow(),
-        filetype=filetype
+        filetype=filetype,
+        tags=tags,
     )
     db.add(uploaded)
     db.commit()
@@ -93,7 +102,7 @@ async def upload_file(
     request: Request,
     body: FileUploadRequest,
     x_api_key: str = Header(None),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ) -> SingleFileUploadResponse | ZipFileUploadResponse:
     api_key = get_api_key_from_env()
     if x_api_key != api_key:
@@ -102,7 +111,7 @@ async def upload_file(
         filename = os.path.basename(body.filepath)
         filetype = guess_filetype(filename)
         results = []
-        if filename.lower().endswith('.zip'):
+        if filename.lower().endswith(".zip"):
             # Decode the zip content and process each file
             file_bytes = base64.b64decode(body.content_base64)
             with zipfile.ZipFile(io.BytesIO(file_bytes)) as z:
@@ -113,24 +122,35 @@ async def upload_file(
                     inner_filetype = guess_filetype(inner_filename)
                     with z.open(zipinfo) as f:
                         inner_content = f.read()
-                        inner_content_b64 = base64.b64encode(inner_content).decode('utf-8')
-                        uploaded = save_uploaded_file(db, inner_filename, inner_content_b64, inner_filetype)
+                        inner_content_b64 = base64.b64encode(inner_content).decode(
+                            "utf-8"
+                        )
+                        # Per i file in un archivio ZIP, non passiamo i tag
+                        uploaded = save_uploaded_file(
+                            db, inner_filename, inner_content_b64, inner_filetype
+                        )
                         results.append(
                             FileResponse(
                                 id=uploaded.id,
                                 filename=inner_filename,
                                 created_at=uploaded.created_at,
-                                filetype=inner_filetype.value
+                                filetype=inner_filetype.value,
+                                tags=uploaded.tags,
                             )
                         )
-            return ZipFileUploadResponse(message="Zip file extracted and files saved to database", files=results)
+            return ZipFileUploadResponse(
+                message="Zip file extracted and files saved to database", files=results
+            )
         else:
-            uploaded = save_uploaded_file(db, filename, body.content_base64, filetype)
+            uploaded = save_uploaded_file(
+                db, filename, body.content_base64, filetype, body.tags
+            )
             return SingleFileUploadResponse(
                 message="File saved to database",
                 id=str(uploaded.id),
                 filename=filename,
-                filetype=filetype.value
+                filetype=filetype.value,
+                tags=uploaded.tags,
             )
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
