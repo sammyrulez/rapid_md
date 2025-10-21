@@ -6,10 +6,12 @@ Rapid MD is a FastAPI-based backend for uploading, storing, and managing files (
 
 - Upload files (single or zip archive)
 - Store file content as base64 in a relational database
-- File metadata: UUID, filename, creation date, type (markdown, image, document)
+- File metadata: UUID, filename, creation date, type (markdown, image, document), tags
 - List all uploaded files
 - Delete files by ID
-- API key protection for upload endpoint
+- API key protection for management endpoints
+- Public endpoint for rendering and displaying files
+- Beautiful HTML template for rendering markdown files
 
 ### API Endpoints
 
@@ -23,7 +25,8 @@ Rapid MD is a FastAPI-based backend for uploading, storing, and managing files (
 ```
 {
 	"filepath": "relative/path/to/file.md",
-	"content_base64": "...base64-encoded content..."
+	"content_base64": "...base64-encoded content...",
+	"tags": { "key1": "value1", "key2": "value2" }  // opzionale
 }
 ```
 
@@ -39,6 +42,15 @@ Returns a list of all uploaded files with metadata.
 
 Deletes the file with the given UUID.
 
+#### Render file (Public endpoint)
+`GET /render/{filename}`
+
+Renders and displays the content of the file. This is a **public endpoint** that doesn't require an API key.
+
+- For markdown files: renders the content as HTML using a styled template
+- For images: displays the image directly in the browser
+- For other files: serves the raw file with appropriate MIME type
+
 ### Database
 
 Uses SQLAlchemy ORM and Alembic for migrations. The `uploaded_files` table contains:
@@ -47,6 +59,7 @@ Uses SQLAlchemy ORM and Alembic for migrations. The `uploaded_files` table conta
 - `content` (base64 string)
 - `created_at` (datetime)
 - `filetype` (enum: markdown, image, document)
+- `tags` (JSON, optional): metadati personalizzati per il file
 
 ### Environment variables
 
