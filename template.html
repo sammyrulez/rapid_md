@@ -96,10 +96,35 @@
             font-size: 0.8em;
             color: #6a737d;
         }
+        .tags-container {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eaecef;
+        }
+        .tag {
+            display: inline-block;
+            background-color: #f1f8ff;
+            color: #0366d6;
+            border-radius: 3px;
+            padding: 3px 8px;
+            margin-right: 5px;
+            margin-bottom: 5px;
+            font-size: 0.85em;
+            border: 1px solid #c8e1ff;
+        }
+        .tag-key {
+            font-weight: 600;
+        }
+        .tag-value {
+            margin-left: 3px;
+        }
     </style>
 </head>
 <body>
     <div class="content">
+        <div class="tags-container">
+            __tags__
+        </div>
         __content__
     </div>
     <div class="footer">
