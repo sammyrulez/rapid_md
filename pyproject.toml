@@ -17,7 +17,6 @@ dev = [
     "alembic>=1.17.0",
     "httpx>=0.27.0",
     "pre-commit>=4.3.0",
-    "fastapi_middleware_astack>=0.3.0",
 ]
 
 
