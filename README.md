@@ -1,5 +1,7 @@
 ## Rapid MD API
 
+[![Tests](https://github.com/sammyrulez/rapid_md/actions/workflows/python-tests.yml/badge.svg)](https://github.com/sammyrulez/rapid_md/actions/workflows/python-tests.yml)
+
 Rapid MD is a FastAPI-based backend for uploading, storing, and managing files (including markdown, images, documents, and zip archives) in a database.
 
 ### Features
