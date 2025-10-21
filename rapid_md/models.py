@@ -29,3 +29,9 @@ class UploadedFile(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     filetype = Column(Enum(FileTypeEnum), nullable=False)
     tags = Column(JSON, nullable=True)  # campo JSON opzionale per i tag
+    upload_session = Column(
+        UUID(as_uuid=True),
+        default=uuid.uuid4,
+        nullable=False,
+        index=True,
+    )  # identificativo della sessione di upload, condiviso tra file caricati insieme
