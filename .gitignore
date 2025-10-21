@@ -10,3 +10,4 @@ wheels/
 .venv
 .env
 readme_base64.txt
+.vscode/settings.json
