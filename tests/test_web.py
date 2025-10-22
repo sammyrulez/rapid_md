@@ -67,7 +67,7 @@ class TestWebRoutes(unittest.TestCase):
             content=base64.b64encode(b"# Test Markdown").decode("utf-8"),
             created_at=datetime(2025, 10, 15, 10, 0),
             filetype=FileTypeEnum.markdown,
-            tags={"category": "test", "priority": "high"},
+            tags=["category", "test", "priority", "high"],
             upload_session=self.session_id_1,
         )
 
@@ -77,7 +77,7 @@ class TestWebRoutes(unittest.TestCase):
             content=base64.b64encode(b"fake-image-data").decode("utf-8"),
             created_at=datetime(2025, 10, 16, 11, 0),
             filetype=FileTypeEnum.image,
-            tags={"category": "test"},
+            tags=["category", "test"],
             upload_session=self.session_id_1,  # Same session as file 1
         )
 
@@ -87,7 +87,7 @@ class TestWebRoutes(unittest.TestCase):
             content=base64.b64encode(b"fake-pdf-data").decode("utf-8"),
             created_at=datetime(2025, 10, 17, 12, 0),
             filetype=FileTypeEnum.document,
-            tags={"priority": "low"},
+            tags=["priority", "low"],
             upload_session=self.session_id_2,  # Different session
         )
 
