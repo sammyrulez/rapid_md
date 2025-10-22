@@ -71,9 +71,8 @@ def home(db: Session = Depends(get_db)) -> Response:
                     # Genera l'HTML dei tag
                     tags_html = '<div class="tags">'
                     if file.tags:
-                        for key, value in file.tags.items():
-                            if isinstance(value, (str, int, float, bool)):
-                                tags_html += f'<span class="tag"><span class="tag-key">{key}</span>: <span class="tag-value">{value}</span></span>'
+                        for tag in file.tags:
+                            tags_html += f'<span class="tag">{tag}</span>'
                     else:
                         tags_html += '<span style="color: #6a737d;">No tags</span>'
                     tags_html += "</div>"
@@ -120,9 +119,8 @@ def home(db: Session = Depends(get_db)) -> Response:
             # Genera l'HTML dei tag
             tags_html = '<div class="tags">'
             if file.tags:
-                for key, value in file.tags.items():
-                    if isinstance(value, (str, int, float, bool)):
-                        tags_html += f'<span class="tag"><span class="tag-key">{key}</span>: <span class="tag-value">{value}</span></span>'
+                for tag in file.tags:
+                    tags_html += f'<span class="tag">{tag}</span>'
             else:
                 tags_html += '<span style="color: #6a737d;">No tags</span>'
             tags_html += "</div>"
@@ -181,7 +179,7 @@ def render_file(filename: str, db: Session = Depends(get_db)) -> Response:
         tags_html = ""
         if file.tags:
             tags_html = "<h3>Tags:</h3>"
-            for tag in file.tags.items():
+            for tag in file.tags:
                 tags_html += f'<span class="tag">{tag}</span>'
         else:
             tags_html = "<!-- No tags -->"
