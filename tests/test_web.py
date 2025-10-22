@@ -138,7 +138,6 @@ class TestWebRoutes(unittest.TestCase):
         self.assertIn("test3.pdf", content)
 
         # Check content has sections
-        self.assertIn("Files by Upload Session", content)
         self.assertIn("Files by Tag", content)
         self.assertIn("All Files", content)
 

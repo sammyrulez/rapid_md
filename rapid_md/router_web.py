@@ -33,92 +33,22 @@ def home(db: Session = Depends(get_db)) -> Response:
     if not files:
         content_html = '<div class="empty-message">No files uploaded yet.</div>'
     else:
-        # Organizza i file per upload_session
-        files_by_session = {}
-        for file in files:
-            session_id = str(file.upload_session)
-            if session_id not in files_by_session:
-                files_by_session[session_id] = []
-            files_by_session[session_id].append(file)
-
         # Organizza i file per tag
         files_by_tag = {}
         for file in files:
             if file.tags:
-                for tag_key, tag_value in file.tags.items():
-                    tag_identifier = f"{tag_key}:{tag_value}"
-                    if tag_identifier not in files_by_tag:
-                        files_by_tag[tag_identifier] = []
-                    files_by_tag[tag_identifier].append(file)
+                for tag in file.tags:
+                    if tag not in files_by_tag:
+                        files_by_tag[tag] = []
+                    files_by_tag[tag].append(file)
 
         content_html = ""
 
-        # Prima sezione: raggruppamento per upload session
-        content_html += "<h2>Files by Upload Session</h2>"
-        if files_by_session:
-            for session_id, session_files in files_by_session.items():
-                # Get timestamp of first file in session as the session date
-                session_date = min(file.created_at for file in session_files).strftime(
-                    "%Y-%m-%d %H:%M"
-                )
-                content_html += '<div class="session-group">'
-                content_html += f"<h3>Upload Session {session_date} ({len(session_files)} files)</h3>"
-
-                # Tabella dei file in questa sessione
-                content_html += """
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Filename</th>
-                            <th>Type</th>
-                            <th>Created At</th>
-                            <th>Tags</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                """
-
-                for file in session_files:
-                    # Formatta la data
-                    created_at = file.created_at.strftime("%Y-%m-%d %H:%M")
-
-                    # Genera l'HTML dei tag
-                    tags_html = '<div class="tags">'
-                    if file.tags:
-                        for key, value in file.tags.items():
-                            if isinstance(value, (str, int, float, bool)):
-                                tags_html += f'<span class="tag"><span class="tag-key">{key}</span>: <span class="tag-value">{value}</span></span>'
-                    else:
-                        tags_html += '<span style="color: #6a737d;">No tags</span>'
-                    tags_html += "</div>"
-
-                    # Determina l'icona in base al tipo di file
-                    filetype_class = f"filetype-{file.filetype.value}"
-
-                    # Aggiungi la riga alla tabella
-                    content_html += f"""
-                    <tr>
-                        <td><a href="/render/{file.filename}" class="{filetype_class}">{file.filename}</a></td>
-                        <td>{file.filetype.value}</td>
-                        <td>{created_at}</td>
-                        <td>{tags_html}</td>
-                    </tr>
-                    """
-
-                content_html += """
-                    </tbody>
-                </table>
-                """
-                content_html += "</div>"
-                content_html += "<hr>"
-
-        # Seconda sezione: raggruppamento per tag
         content_html += "<h2>Files by Tag</h2>"
         if files_by_tag:
             for tag_identifier, tag_files in files_by_tag.items():
-                tag_key, tag_value = tag_identifier.split(":", 1)
                 content_html += '<div class="tag-group">'
-                content_html += f'<h3>Tag: <span class="tag"><span class="tag-key">{tag_key}</span>: <span class="tag-value">{tag_value}</span></span> ({len(tag_files)} files)</h3>'
+                content_html += f'<h3>Tag: <span class="tag">{tag_identifier}</span> ({len(tag_files)} files)</h3>'
 
                 # Tabella dei file con questo tag
                 content_html += """
