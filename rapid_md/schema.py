@@ -24,7 +24,7 @@ class FileDeleteResponse(BaseModel):
 class FileUploadRequest(BaseModel):
     filepath: str = Field(..., description="Relative path of the file to save")
     content_base64: str = Field(..., description="File content encoded in base64")
-    tags: Optional[dict] = Field(None, description="Optional tags for the file")
+    tags: List[str] = Field(None, description="Optional tags for the file")
 
 
 class SingleFileUploadResponse(BaseModel):
@@ -32,7 +32,7 @@ class SingleFileUploadResponse(BaseModel):
     id: str
     filename: str
     filetype: str
-    tags: Optional[dict] = None
+    tags: List[str] = Field(None, description="Optional tags for the file")
 
 
 class ZipFileUploadResponse(BaseModel):
