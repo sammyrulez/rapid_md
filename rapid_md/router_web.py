@@ -181,9 +181,8 @@ def render_file(filename: str, db: Session = Depends(get_db)) -> Response:
         tags_html = ""
         if file.tags:
             tags_html = "<h3>Tags:</h3>"
-            for key, value in file.tags.items():
-                if isinstance(value, (str, int, float, bool)):
-                    tags_html += f'<span class="tag"><span class="tag-key">{key}</span>: <span class="tag-value">{value}</span></span>'
+            for tag in file.tags.items():
+                tags_html += f'<span class="tag">{tag}</span>'
         else:
             tags_html = "<!-- No tags -->"
 
